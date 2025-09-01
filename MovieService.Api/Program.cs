@@ -1,11 +1,18 @@
+using MovieService.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddHttpClient<IMovieService, MovieService.Services.MovieService>();
+
+var omdbKey = builder.Configuration["OMDb:ApiKey"];
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddSingleton(new MovieServiceOptions { ApiKey = omdbKey });
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
