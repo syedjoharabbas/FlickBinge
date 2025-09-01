@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36401.2 d17.14
+VisualStudioVersion = 17.14.36401.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Api", "UserService.Api\UserService.Api.csproj", "{091CF414-5B36-42AD-9F76-CD8C5EAE9221}"
 EndProject
@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlickBinge.UI", "FlickBinge.UI\FlickBinge.UI.csproj", "{48020744-CA9F-46F8-A7B4-34C8FC4A79F4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,6 +106,10 @@ Global
 		{587C0061-9CD5-4E0B-9B33-A55AC707724F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{587C0061-9CD5-4E0B-9B33-A55AC707724F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{587C0061-9CD5-4E0B-9B33-A55AC707724F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48020744-CA9F-46F8-A7B4-34C8FC4A79F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48020744-CA9F-46F8-A7B4-34C8FC4A79F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48020744-CA9F-46F8-A7B4-34C8FC4A79F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48020744-CA9F-46F8-A7B4-34C8FC4A79F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +128,7 @@ Global
 		{C8719EF6-B0F5-4242-9D59-E0913E5C8560} = {369CB01D-A1A7-72D2-AABC-3F0945D148A2}
 		{C4D4B270-72FD-4E59-AD80-9D34FE54DAA6} = {369CB01D-A1A7-72D2-AABC-3F0945D148A2}
 		{587C0061-9CD5-4E0B-9B33-A55AC707724F} = {085A627D-EF1E-4314-87EE-20A3E3732098}
+		{48020744-CA9F-46F8-A7B4-34C8FC4A79F4} = {AB7F39B6-34B0-4CC8-9ABA-5AEF7F895B49}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9D262EA9-D091-47E3-AA8D-F6F685736514}
