@@ -1,0 +1,6 @@
+@WatchlistService.Api_HostAddress = http://localhost:5128
+
+GET {{WatchlistService.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

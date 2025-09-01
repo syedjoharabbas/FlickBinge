@@ -1,0 +1,27 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "UserService.Api\\UserService.Api.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "MovieService.Api\\MovieService.Api.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "RecommendationService.Api\\RecommendationService.Api.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "WatchlistService.Api\\WatchlistService.Api.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "ApiGateway\\ApiGateway.csproj",
+        "Action": "StartWithoutDebugging"
+      }
+    ]
+  }
+]
