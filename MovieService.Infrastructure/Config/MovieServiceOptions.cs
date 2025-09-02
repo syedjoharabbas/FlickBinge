@@ -1,4 +1,4 @@
-﻿namespace MovieService.Services
+﻿namespace MovieService.Infrastructure.Config
 {
     public class MovieServiceOptions
     {

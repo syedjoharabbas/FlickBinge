@@ -1,7 +1,9 @@
-﻿using MovieService.Models;
+﻿using MovieService.Core.Interfaces;
+using MovieService.Core.Models;
+using MovieService.Infrastructure.Config;
 using System.Net.Http.Json;
 
-namespace MovieService.Services
+namespace MovieService.Infrastructure.Services
 {
     public class MovieService : IMovieService
     {

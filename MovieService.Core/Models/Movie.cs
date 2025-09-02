@@ -1,4 +1,4 @@
-﻿namespace MovieService.Models;
+﻿namespace MovieService.Core.Models;
 
 public class Movie
 {

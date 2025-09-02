@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MovieService.Models;
-using MovieService.Services;
+using MovieService.Core.Interfaces;
+using MovieService.Core.Models;
 
 namespace FlickBinge.Movies.Controllers;
 
