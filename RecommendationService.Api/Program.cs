@@ -1,23 +1,35 @@
+using Microsoft.SemanticKernel;
+using RecommendationService.Core.Interfaces;
+using RecommendationService.Core.Models;
+using RecommendationService.Infrastructure.SemanticKernel;
+using RecommendationService.Infrastructure.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddSingleton<SemanticKernelConnector>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var apiKey = config["OpenAI:ApiKey"];
+    if (string.IsNullOrEmpty(apiKey))
+        throw new InvalidOperationException("OpenAI API key not set. Check environment variable OpenAI__ApiKey.");
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+    return new SemanticKernelConnector(apiKey);
+});
+
+
+builder.Services.AddScoped<IMovieRecommendationService, MovieRecommendationService>();
+
+builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.MapPost("/recommend", async (IMovieRecommendationService recommendationService, MovieRecommendationRequest request) =>
+{
+    var result = await recommendationService.RecommendAsync(request);
+    return Results.Ok(result);
+})
+.WithName("GetMovieRecommendations")
+.WithOpenApi();
 
 app.Run();

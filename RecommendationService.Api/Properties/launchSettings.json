@@ -7,6 +7,7 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5002",
       "environmentVariables": {
+        "OpenAI__ApiKey": "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",
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }

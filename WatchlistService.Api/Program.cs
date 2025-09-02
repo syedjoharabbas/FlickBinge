@@ -1,3 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using WatchlistService.Core.Interfaces;
+using WatchlistService.Infrastructure.DBContext;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddDbContext<WatchlistDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("WatchlistConnection")));
+builder.Services.AddScoped<IWatchlistService, WatchlistService.Infrastructure.Services.WatchlistService>();
+
 
 var app = builder.Build();
 

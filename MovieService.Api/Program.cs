@@ -22,6 +22,14 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Minimal API endpoint to get popular movies
+app.MapGet("/", async (IMovieService movieService) =>
+{
+    var movies = await movieService.GetPopularMoviesAsync();
+    return Results.Ok(movies);
+})
+.WithName("GetPopularMovies")
+.WithOpenApi();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

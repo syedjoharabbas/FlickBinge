@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UserService.Core.Entities;
 using UserService.Core.Interfaces;
 
-namespace UserService.Core.Services
+namespace UserService.Infrastructure.Services
 {
     public class UserService
     {
