@@ -4,23 +4,23 @@
     "Projects": [
       {
         "Path": "UserService.Api\\UserService.Api.csproj",
-        "Action": "StartWithoutDebugging"
+        "Action": "Start"
       },
       {
         "Path": "MovieService.Api\\MovieService.Api.csproj",
-        "Action": "StartWithoutDebugging"
+        "Action": "Start"
       },
       {
         "Path": "RecommendationService.Api\\RecommendationService.Api.csproj",
-        "Action": "StartWithoutDebugging"
+        "Action": "Start"
       },
       {
         "Path": "WatchlistService.Api\\WatchlistService.Api.csproj",
-        "Action": "StartWithoutDebugging"
+        "Action": "Start"
       },
       {
         "Path": "ApiGateway\\ApiGateway.csproj",
-        "Action": "StartWithoutDebugging"
+        "Action": "Start"
       }
     ]
   }

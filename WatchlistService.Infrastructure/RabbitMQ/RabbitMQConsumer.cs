@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.DependencyInjection;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
@@ -10,19 +11,21 @@ public class RabbitMQConsumer : IAsyncDisposable
 {
     private readonly IWatchlistService _watchlistService;
     private readonly string _hostname = "localhost";
+    private readonly int _port = 32771;
     private readonly string _queueName = "WatchlistQueue";
     private IConnection? _connection;
     private IChannel? _channel;
     private bool _disposed = false;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public RabbitMQConsumer(IWatchlistService watchlistService)
+    public RabbitMQConsumer(IServiceScopeFactory scopeFactory)
     {
-        _watchlistService = watchlistService;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task StartListeningAsync()
     {
-        var factory = new ConnectionFactory { HostName = _hostname };
+        var factory = new ConnectionFactory { HostName = _hostname,Port=_port };
         _connection = await factory.CreateConnectionAsync();
         _channel = await _connection.CreateChannelAsync();
 
@@ -44,21 +47,22 @@ public class RabbitMQConsumer : IAsyncDisposable
 
                 if (eventObj is not null && eventObj.EventType == "UserCreated")
                 {
-                    await _watchlistService.CreateWatchlistAsync(eventObj.UserId);
+                    // Create a new scope per message
+                    using var scope = _scopeFactory.CreateScope();
+                    var watchlistService = scope.ServiceProvider.GetRequiredService<IWatchlistService>();
+
+                    await watchlistService.CreateWatchlistAsync(eventObj.UserId);
                 }
 
-                // Acknowledge message
                 await _channel.BasicAckAsync(ea.DeliveryTag, false);
             }
             catch (Exception ex)
             {
-                // Log the exception (you might want to inject ILogger)
                 Console.WriteLine($"Error processing message: {ex.Message}");
-
-                // Reject and requeue the message on error (optional)
                 await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
             }
         };
+
 
         await _channel.BasicConsumeAsync(
             queue: _queueName,

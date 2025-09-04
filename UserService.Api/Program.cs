@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using UserService.Core.Entities;
 using UserService.Core.Interfaces;
 using UserService.Infrastructure.DBContext;
+using UserService.Infrastructure.RabbitMQ;
 using UserService.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,7 +12,7 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService.Infrastructure.Services.UserService>();
-
+builder.Services.AddSingleton<RabbitMQPublisher>();
 var app = builder.Build();
 
 app.UseHttpsRedirection();

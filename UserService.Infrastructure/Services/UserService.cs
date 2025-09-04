@@ -5,16 +5,19 @@ using System.Text;
 using System.Threading.Tasks;
 using UserService.Core.Entities;
 using UserService.Core.Interfaces;
+using UserService.Infrastructure.RabbitMQ;
 
 namespace UserService.Infrastructure.Services
 {
     public class UserService
     {
         private readonly IUserRepository _repository;
+        private readonly RabbitMQPublisher _publisher;
 
-        public UserService(IUserRepository repository)
+        public UserService(IUserRepository repository, RabbitMQPublisher publisher)
         {
             _repository = repository;
+            _publisher = publisher;
         }
 
         // Get all users
@@ -35,11 +38,16 @@ namespace UserService.Infrastructure.Services
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
 
-            // Example of simple business logic: default created date
+            // Default created date
             user.CreatedAt = DateTime.UtcNow;
 
+            // Save user in DB
             var createdUser = await _repository.AddAsync(user);
             await _repository.SaveChangesAsync();
+
+            // Trigger UserCreated event
+            await _publisher.PublishUserCreatedAsync(createdUser.Id);
+
             return createdUser;
         }
 
