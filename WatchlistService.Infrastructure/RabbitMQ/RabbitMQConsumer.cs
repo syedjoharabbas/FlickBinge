@@ -11,7 +11,7 @@ public class RabbitMQConsumer : IAsyncDisposable
 {
     private readonly IWatchlistService _watchlistService;
     private readonly string _hostname = "localhost";
-    private readonly int _port = 32771;
+    private readonly int _port = 5672;
     private readonly string _queueName = "WatchlistQueue";
     private IConnection? _connection;
     private IChannel? _channel;

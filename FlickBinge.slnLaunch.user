@@ -21,6 +21,11 @@
       {
         "Path": "ApiGateway\\ApiGateway.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "FlickBinge.UI\\FlickBinge.UI.csproj",
+        "Action": "Start",
+        "DebugTarget": "BlazorHTTPS"
       }
     ]
   }

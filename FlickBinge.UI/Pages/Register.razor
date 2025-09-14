@@ -1,0 +1,285 @@
+@page "/register"
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-dark">
+    <div class="card shadow-lg border-0" style="max-width: 450px; width: 100%;">
+        <div class="card-header bg-danger text-white text-center py-4">
+            <h3 class="mb-0">
+                <i class="fas fa-user-plus me-2"></i>
+                Create FlickBinge Account
+            </h3>
+        </div>
+        <div class="card-body p-4">
+            <EditForm Model="@_registerModel" OnValidSubmit="RegisterAsync" FormName="RegisterForm">
+                <DataAnnotationsValidator />
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <div>@_errorMessage</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(_successMessage))
+                {
+                    <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <div>@_successMessage</div>
+                    </div>
+                }
+
+                <ValidationSummary class="text-danger mb-3" />
+
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-semibold">
+                        <i class="fas fa-user me-1"></i>
+                        Username
+                    </label>
+                    <InputText id="username"
+                               class="form-control form-control-lg"
+                               @bind-Value="_registerModel.Username"
+                               placeholder="Choose a unique username"
+                               disabled="@_isLoading"
+                               @oninput="ClearMessages" />
+                    <ValidationMessage For="@(() => _registerModel.Username)" class="text-danger small" />
+                    <div class="form-text">Username must be 3-30 characters long</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold">
+                        <i class="fas fa-envelope me-1"></i>
+                        Email Address
+                    </label>
+                    <InputText id="email"
+                               class="form-control form-control-lg"
+                               @bind-Value="_registerModel.Email"
+                               type="email"
+                               placeholder="Enter your email address"
+                               disabled="@_isLoading"
+                               @oninput="ClearMessages" />
+                    <ValidationMessage For="@(() => _registerModel.Email)" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-semibold">
+                        <i class="fas fa-lock me-1"></i>
+                        Password
+                    </label>
+                    <InputText id="password"
+                               class="form-control form-control-lg"
+                               @bind-Value="_registerModel.Password"
+                               type="password"
+                               placeholder="Create a strong password"
+                               disabled="@_isLoading"
+                               @oninput="ClearMessages" />
+                    <ValidationMessage For="@(() => _registerModel.Password)" class="text-danger small" />
+                    <div class="form-text">Password must be at least 8 characters with uppercase, lowercase, number, and special character</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label fw-semibold">
+                        <i class="fas fa-lock me-1"></i>
+                        Confirm Password
+                    </label>
+                    <InputText id="confirmPassword"
+                               class="form-control form-control-lg"
+                               @bind-Value="_registerModel.ConfirmPassword"
+                               type="password"
+                               placeholder="Confirm your password"
+                               disabled="@_isLoading"
+                               @oninput="ClearMessages" />
+                    <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="text-danger small" />
+                </div>
+
+                <div class="mb-4">
+                    <div class="form-check">
+                        <InputCheckbox id="agreeTerms"
+                                       class="form-check-input"
+                                       @bind-Value="_registerModel.AgreeToTerms"
+                                       disabled="@_isLoading" />
+                        <label class="form-check-label" for="agreeTerms">
+                            I agree to the
+                            <a href="/terms" target="_blank" class="text-danger text-decoration-none">Terms of Service</a>
+                            and
+                            <a href="/privacy" target="_blank" class="text-danger text-decoration-none">Privacy Policy</a>
+                        </label>
+                        <ValidationMessage For="@(() => _registerModel.AgreeToTerms)" class="text-danger small d-block" />
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-danger btn-lg w-100 mb-3"
+                        disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Creating Account...</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-user-plus me-2"></i>
+                        <span>Create Account</span>
+                    }
+                </button>
+            </EditForm>
+
+            <div class="text-center">
+                <small class="text-muted">
+                    Already have an account?
+                    <a href="/login" class="text-danger text-decoration-none fw-semibold">Sign in here</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private RegisterRequest _registerModel { get; set; } = new();
+
+    private string? _errorMessage;
+    private string? _successMessage;
+    private bool _isLoading = false;
+
+    protected override void OnInitialized()
+    {
+        _registerModel ??= new RegisterRequest();
+    }
+
+    private async Task RegisterAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/users/auth/register", _registerModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var registerResponse = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+
+                if (registerResponse != null)
+                {
+                    _successMessage = "Account created successfully! Redirecting to login...";
+                    StateHasChanged();
+
+                    // Wait a moment to show success message
+                    await Task.Delay(2000);
+
+                    Nav.NavigateTo("/login", forceLoad: true);
+                }
+                else
+                {
+                    _errorMessage = "Registration completed but response was invalid. Please try logging in.";
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+
+                _errorMessage = response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.BadRequest => await ParseValidationErrors(response),
+                    System.Net.HttpStatusCode.Conflict => "Username or email already exists. Please choose different values.",
+                    System.Net.HttpStatusCode.UnprocessableEntity => "Invalid data provided. Please check your input.",
+                    System.Net.HttpStatusCode.TooManyRequests => "Too many registration attempts. Please try again later.",
+                    _ => "Registration failed. Please try again later."
+                };
+            }
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Unable to connect to the server. Please check your internet connection.";
+        }
+        catch (TaskCanceledException)
+        {
+            _errorMessage = "The request timed out. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again.";
+            Console.WriteLine($"Registration error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<string> ParseValidationErrors(HttpResponseMessage response)
+    {
+        try
+        {
+            var errorResponse = await response.Content.ReadFromJsonAsync<ValidationErrorResponse>();
+            if (errorResponse?.Errors != null && errorResponse.Errors.Any())
+            {
+                return string.Join("; ", errorResponse.Errors.SelectMany(e => e.Value));
+            }
+        }
+        catch
+        {
+            // If parsing fails, fall back to generic message
+        }
+
+        return "Please check your input and try again.";
+    }
+
+    private void ClearMessages()
+    {
+        if (!string.IsNullOrEmpty(_errorMessage) || !string.IsNullOrEmpty(_successMessage))
+        {
+            _errorMessage = null;
+            _successMessage = null;
+            StateHasChanged();
+        }
+    }
+
+    // Data models
+    public class RegisterRequest
+    {
+        [Required(ErrorMessage = "Username is required")]
+        [StringLength(30, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 30 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9_-]+$", ErrorMessage = "Username can only contain letters, numbers, underscores, and hyphens")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+        [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Password is required")]
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]",
+            ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please confirm your password")]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the Terms of Service and Privacy Policy")]
+        public bool AgreeToTerms { get; set; } = false;
+    }
+
+    public record RegisterResponse(
+        Guid UserId,
+        string Username,
+        string Email,
+        DateTime CreatedAt,
+        string Message
+    );
+
+    public class ValidationErrorResponse
+    {
+        public Dictionary<string, string[]>? Errors { get; set; }
+        public string? Title { get; set; }
+        public int Status { get; set; }
+    }
+}

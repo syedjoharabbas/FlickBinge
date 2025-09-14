@@ -24,7 +24,7 @@ builder.Services.AddEndpointsApiExplorer();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-app.MapPost("/recommend", async (IMovieRecommendationService recommendationService, MovieRecommendationRequest request) =>
+app.MapPost("/", async (IMovieRecommendationService recommendationService, MovieRecommendationRequest request) =>
 {
     var result = await recommendationService.RecommendAsync(request);
     return Results.Ok(result);

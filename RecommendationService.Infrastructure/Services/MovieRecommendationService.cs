@@ -42,12 +42,7 @@ namespace RecommendationService.Infrastructure.Services
             var watched = string.Join(", ", request.WatchedMovies);
             var interests = string.Join(", ", request.Interests);
 
-            return
-    $@"You are a helpful movie recommendation assistant.
-Given the movies a user has already watched: {watched}
-and their interests: {interests}
-Provide 5 movie recommendations that match their taste.
-List them separated by commas.";
+            return  $@"You are a helpful movie recommendation assistant. Given the movies a user has already watched: {watched} and their interests: {interests} Provide 5 movie recommendations that match their taste. List them separated by commas.";
         }
     }
 }

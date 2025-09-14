@@ -1,4 +1,5 @@
 ﻿using RabbitMQ.Client;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 
@@ -7,7 +8,7 @@ namespace UserService.Infrastructure.RabbitMQ
     public class RabbitMQPublisher : IAsyncDisposable
     {
         private readonly string _hostname = "localhost";
-        private readonly int _port = 32771;
+        private readonly int _port = 5672;
         private readonly string _queueName = "WatchlistQueue";
         private IConnection? _connection;
         private IChannel? _channel;
