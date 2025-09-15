@@ -158,7 +158,7 @@
 
         try
         {
-            var response = await Http.PostAsJsonAsync("api/users/auth/register", _registerModel);
+            var response = await Http.PostAsJsonAsync("http://localhost:5000/users/auth/register", _registerModel);
 
             if (response.IsSuccessStatusCode)
             {
@@ -256,8 +256,10 @@
 
         [Required(ErrorMessage = "Password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long")]
-        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]",
-            ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
+        [RegularExpression(
+            @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
+            ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, one special character, and be at least 8 characters long"
+        )]
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Please confirm your password")]
@@ -267,6 +269,7 @@
         [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the Terms of Service and Privacy Policy")]
         public bool AgreeToTerms { get; set; } = false;
     }
+
 
     public record RegisterResponse(
         Guid UserId,

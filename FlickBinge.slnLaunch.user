@@ -25,7 +25,7 @@
       {
         "Path": "FlickBinge.UI\\FlickBinge.UI.csproj",
         "Action": "Start",
-        "DebugTarget": "BlazorHTTPS"
+        "DebugTarget": "BlazorHTTP"
       }
     ]
   }

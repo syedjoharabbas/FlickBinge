@@ -1,0 +1,56 @@
+﻿@page "/movies"
+@inject HttpClient Http
+@inject FlickBinge.UI.Services.LocalStorageService Storage
+
+<h2 class="mb-4 text-light">Movies</h2>
+
+@if (movies == null)
+{
+    <p class="text-light">Loading movies...</p>
+}
+else if (movies.Count == 0)
+{
+    <p class="text-light">No movies found.</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        @foreach (var movie in movies)
+        {
+            <div class="col">
+                <div class="card h-100 bg-dark text-light border-secondary shadow-sm">
+                    <img src="@movie.poster" class="card-img-top" alt="@movie.title"
+                         style="object-fit: cover; height: 350px;" />
+                    <div class="card-body text-center">
+                        <h5 class="card-title">@movie.title (@movie.year)</h5>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Movie>? movies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await Storage.GetItemAsync("accessToken");
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            movies = await Http.GetFromJsonAsync<List<Movie>>("http://localhost:5000/movies");
+        }
+    }
+
+    public class Movie
+    {
+        public string title { get; set; }
+        public string year { get; set; }
+        public string poster { get; set; }
+        public string imdbID { get; set; }
+    }
+}
