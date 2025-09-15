@@ -1,0 +1,102 @@
+﻿@page "/"
+
+<div class="home-page">
+    <!-- Hero Section -->
+    <section class="hero-section text-center text-white d-flex flex-column justify-content-center align-items-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-3">Welcome to FlickBinge 🍿</h1>
+            <p class="lead text-secondary mb-4">
+                Your ultimate movie & TV companion. Discover trending films, create your watchlist, and get personalized recommendations.
+            </p>
+            <a href="/movies" class="btn btn-danger btn-lg">
+                <i class="fas fa-play me-2"></i> Browse Movies
+            </a>
+        </div>
+    </section>
+
+    <!-- Featured Categories -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="mb-4 fw-semibold text-white">Explore FlickBinge</h2>
+            <div class="row g-4">
+                <div class="col-md-4 col-sm-12">
+                    <div class="card gradient-card gradient-trending h-100">
+                        <div class="card-body text-white d-flex flex-column">
+                            <h5 class="card-title fw-bold">🔥 Trending Now</h5>
+                            <p class="card-text flex-grow-1">
+                                See what’s hot in movies and TV shows around the world.
+                            </p>
+                            <a href="/trending" class="btn btn-outline-light btn-sm align-self-start">View Trending</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12">
+                    <div class="card gradient-card gradient-recommended h-100">
+                        <div class="card-body text-white d-flex flex-column">
+                            <h5 class="card-title fw-bold">⭐ Recommended For You</h5>
+                            <p class="card-text flex-grow-1">
+                                Tailored picks based on your favorites and viewing habits.
+                            </p>
+                            <a href="/recommendations" class="btn btn-outline-light btn-sm align-self-start">See Recommendations</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12">
+                    <div class="card gradient-card gradient-watchlist h-100">
+                        <div class="card-body text-white d-flex flex-column">
+                            <h5 class="card-title fw-bold">📌 My Watchlist</h5>
+                            <p class="card-text flex-grow-1">
+                                Keep track of all the movies and shows you want to watch later.
+                            </p>
+                            <a href="/watchlist" class="btn btn-outline-light btn-sm align-self-start">View My List</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="py-5 bg-card text-white">
+        <div class="container text-center">
+            <h2 class="fw-semibold mb-3">Why FlickBinge?</h2>
+            <p class="text-secondary mb-0" style="max-width: 700px; margin: 0 auto;">
+                FlickBinge is more than just a movie tracker — it’s your personal cinema hub. From discovering new films
+                and binge-worthy series to connecting with friends and sharing reviews, FlickBinge helps you enjoy the
+                best of entertainment in one place. Relax, explore, and binge on!
+            </p>
+        </div>
+    </section>
+</div>
+
+<style>
+    .hero-section {
+        min-height: 70vh;
+        background: linear-gradient(135deg, #141414 0%, #0f0f0f 100%);
+    }
+
+    /* Gradient Cards */
+    .gradient-card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: var(--shadow-lg);
+        transition: var(--transition);
+    }
+
+        .gradient-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+    .gradient-trending {
+        background: linear-gradient(135deg, #e50914, #b20710);
+    }
+
+    .gradient-recommended {
+        background: linear-gradient(135deg, #1f4037, #99f2c8);
+    }
+
+    .gradient-watchlist {
+        background: linear-gradient(135deg, #141e30, #243b55);
+    }
+</style>

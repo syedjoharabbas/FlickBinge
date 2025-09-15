@@ -1,11 +1,12 @@
 ﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
+@using System.IdentityModel.Tokens.Jwt
 @inject NavigationManager Nav
 @inject FlickBinge.UI.Services.LocalStorageService Storage
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <div class="main-wrapper">
-    <!-- Loading Overlay -->
     @if (_isInitializing)
     {
         <div class="loading-overlay">
@@ -13,96 +14,71 @@
                 <div class="spinner-border text-danger" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <div class="mt-2">FlickBinge</div>
+                <div class="mt-2 fw-semibold">FlickBinge</div>
             </div>
         </div>
     }
 
-    <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand" href="/">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top app-navbar shadow-sm">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/" aria-label="FlickBinge Home">
                 <i class="fas fa-film brand-icon"></i>
-                <span class="brand-text">FlickBinge</span>
+                <span class="brand-text fw-semibold">FlickBinge</span>
             </a>
 
             <!-- Mobile Search Button -->
-            <button class="btn btn-link text-light d-lg-none me-2" type="button" @onclick="ToggleMobileSearch">
+            <button class="btn btn-link text-light d-lg-none me-2" type="button" @onclick="ToggleMobileSearch" aria-label="Search">
                 <i class="fas fa-search"></i>
             </button>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navMenu">
-                <!-- Main Navigation -->
+                <!-- Left nav -->
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                            <i class="fas fa-home me-1"></i>Home
-                        </NavLink>
-                    </li>
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="/movies">
-                            <i class="fas fa-video me-1"></i>Movies
-                        </NavLink>
-                    </li>
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="/recommendations">
-                            <i class="fas fa-magic me-1"></i>For You
-                        </NavLink>
-                    </li>
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="/watchlist">
-                            <i class="fas fa-bookmark me-1"></i>My List
-                        </NavLink>
-                    </li>
+                    <li class="nav-item"><NavLink class="nav-link" href="/" Match="NavLinkMatch.All"><i class="fas fa-home me-1"></i>Home</NavLink></li>
+                    <li class="nav-item"><NavLink class="nav-link" href="/movies"><i class="fas fa-video me-1"></i>Movies</NavLink></li>
+                    <li class="nav-item"><NavLink class="nav-link" href="/recommendations"><i class="fas fa-magic me-1"></i>For You</NavLink></li>
+                    <li class="nav-item"><NavLink class="nav-link" href="/watchlist"><i class="fas fa-bookmark me-1"></i>My List</NavLink></li>
                 </ul>
 
-                <!-- Search Bar (Desktop) -->
+                <!-- Search Bar -->
                 <div class="d-none d-lg-flex me-3">
                     <div class="search-container">
-                        <input type="text" class="form-control search-input" placeholder="Search movies, shows..."
-                               @bind="_searchQuery" @onkeypress="HandleSearchKeyPress" @onfocus="ShowSearchDropdown" @onblur="HideSearchDropdown">
+                        <input id="desktopSearch" type="text" class="form-control search-input"
+                               placeholder="Search movies, shows... (Ctrl+K)"
+                               @bind="_searchQuery" @onkeypress="HandleSearchKeyPress"
+                               @onfocus="ShowSearchDropdown" @onblur="HideSearchDropdown" />
                         <button class="btn btn-danger" type="button" @onclick="async () => await PerformSearch()">
                             <i class="fas fa-search"></i>
                         </button>
 
-                        <!-- Search Dropdown -->
                         @if (_showSearchDropdown && !string.IsNullOrEmpty(_searchQuery))
                         {
                             <div class="search-dropdown">
                                 <div class="search-suggestion" @onclick="() => PerformSearch(_searchQuery)">
-                                    <i class="fas fa-search me-2"></i>
-                                    Search for "@_searchQuery"
+                                    <i class="fas fa-search me-2"></i>Search for "<span class="fw-semibold">@_searchQuery</span>"
                                 </div>
-                                <!-- Add recent searches or suggestions here -->
                             </div>
                         }
                     </div>
                 </div>
 
-                <!-- User Menu -->
-                <ul class="navbar-nav">
+                <!-- Right nav -->
+                <ul class="navbar-nav align-items-center">
                     @if (!_isLoggedIn)
                     {
-                        <li class="nav-item">
-                            <NavLink class="nav-link btn-outline-danger btn btn-sm me-2" href="/login">
-                                <i class="fas fa-sign-in-alt me-1"></i>Sign In
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link btn-danger btn btn-sm" href="/register">
-                                <i class="fas fa-user-plus me-1"></i>Sign Up
-                            </NavLink>
-                        </li>
+                        <li class="nav-item me-2"><NavLink class="nav-link btn btn-sm btn-outline-danger px-3" href="/login"><i class="fas fa-sign-in-alt me-1"></i>Sign In</NavLink></li>
+                        <li class="nav-item"><NavLink class="nav-link btn btn-sm btn-danger px-3" href="/register"><i class="fas fa-user-plus me-1"></i>Sign Up</NavLink></li>
                     }
                     else
                     {
                         <!-- Notifications -->
                         <li class="nav-item dropdown me-2">
-                            <a class="nav-link position-relative" href="#" id="notificationMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link position-relative" href="#" id="notificationMenu" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-bell"></i>
                                 @if (_notificationCount > 0)
                                 {
@@ -113,14 +89,14 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationMenu">
                                 <li class="dropdown-header">Notifications</li>
-                                <li><hr class="dropdown-divider"></li>
+                                <li><hr class="dropdown-divider" /></li>
                                 @if (_notifications.Any())
                                 {
                                     @foreach (var notification in _notifications.Take(5))
                                     {
                                         <li><a class="dropdown-item notification-item" href="#">@notification</a></li>
                                     }
-                                    <li><hr class="dropdown-divider"></li>
+                                    <li><hr class="dropdown-divider" /></li>
                                     <li><a class="dropdown-item text-center" href="/notifications">View All</a></li>
                                 }
                                 else
@@ -132,55 +108,28 @@
 
                         <!-- User Profile -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle user-menu" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle user-menu d-flex align-items-center gap-2" href="#" id="userMenu" role="button" data-bs-toggle="dropdown">
                                 <div class="user-avatar">
                                     @if (!string.IsNullOrEmpty(_userAvatar))
                                     {
-                                        <img src="@_userAvatar" alt="@_username" class="avatar-img">
+                                        <img src="@_userAvatar" alt="@_username" class="avatar-img" />
                                     }
                                     else
                                     {
-                                        <div class="avatar-placeholder">
-                                            @(_username?.FirstOrDefault().ToString().ToUpper() ?? "U")
-                                        </div>
+                                        <div class="avatar-placeholder">@GetInitials(_username)</div>
                                     }
                                 </div>
-                                <span class="username">@_username</span>
+                                <span class="username d-none d-md-inline">@_username</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="userMenu">
-                                <li class="dropdown-header">
-                                    <div class="user-info">
-                                        <strong>@_username</strong>
-                                        <small class="text-muted d-block">@_userEmail</small>
-                                    </div>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <NavLink class="dropdown-item" href="/profile">
-                                        <i class="fas fa-user me-2"></i>My Profile
-                                    </NavLink>
-                                </li>
-                                <li>
-                                    <NavLink class="dropdown-item" href="/account">
-                                        <i class="fas fa-cog me-2"></i>Account Settings
-                                    </NavLink>
-                                </li>
-                                <li>
-                                    <NavLink class="dropdown-item" href="/billing">
-                                        <i class="fas fa-credit-card me-2"></i>Billing
-                                    </NavLink>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <NavLink class="dropdown-item" href="/help">
-                                        <i class="fas fa-question-circle me-2"></i>Help Center
-                                    </NavLink>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item logout-btn" @onclick="Logout">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Sign Out
-                                    </button>
-                                </li>
+                                <li class="dropdown-header"><div class="user-info"><strong>@_username</strong><small class="text-muted d-block">@_userEmail</small></div></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li><NavLink class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>My Profile</NavLink></li>
+                                <li><NavLink class="dropdown-item" href="/account"><i class="fas fa-cog me-2"></i>Account Settings</NavLink></li>
+                                <li><NavLink class="dropdown-item" href="/billing"><i class="fas fa-credit-card me-2"></i>Billing</NavLink></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li><NavLink class="dropdown-item" href="/help"><i class="fas fa-question-circle me-2"></i>Help Center</NavLink></li>
+                                <li><button class="dropdown-item logout-btn" @onclick="Logout"><i class="fas fa-sign-out-alt me-2"></i>Sign Out</button></li>
                             </ul>
                         </li>
                     }
@@ -189,26 +138,28 @@
         </div>
     </nav>
 
-    <!-- Mobile Search Bar -->
+    <!-- Mobile Search -->
     @if (_showMobileSearch)
     {
         <div class="mobile-search-overlay">
             <div class="mobile-search-container">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Search movies, shows..."
-                           @bind="_searchQuery" @onkeypress="HandleSearchKeyPress" @ref="mobileSearchInput">
-                    <button class="btn btn-danger" type="button" @onclick="async () => await PerformSearch()">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <button class="btn btn-outline-secondary" type="button" @onclick="ToggleMobileSearch">
-                        <i class="fas fa-times"></i>
-                    </button>
+                           @bind="_searchQuery" @onkeypress="HandleSearchKeyPress" @ref="mobileSearchInput" />
+                    <button class="btn btn-danger" type="button" @onclick="async () => await PerformSearch()"><i class="fas fa-search"></i></button>
+                    <button class="btn btn-outline-secondary" type="button" @onclick="ToggleMobileSearch"><i class="fas fa-times"></i></button>
                 </div>
             </div>
         </div>
     }
 
-    <!-- Main Content -->
+    <!-- Toast -->
+    @if (!string.IsNullOrEmpty(_toastMessage))
+    {
+        <div class="toast-container"><div class="app-toast"><i class="fas fa-info-circle me-2"></i>@_toastMessage</div></div>
+    }
+
+    <!-- Main -->
     <main class="main-content">
         <div class="content-wrapper">
             @if (!string.IsNullOrEmpty(_currentRoute) && _currentRoute != "/")
@@ -216,106 +167,70 @@
                 <nav aria-label="breadcrumb" class="breadcrumb-nav">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="/">Home</a></li>
-                        @if (_breadcrumbs.Any())
+                        @foreach (var crumb in _breadcrumbs)
                         {
-                            @foreach (var crumb in _breadcrumbs)
-                            {
-                                <li class="breadcrumb-item active" aria-current="page">@crumb</li>
-                            }
+                            <li class="breadcrumb-item active">@crumb</li>
                         }
                     </ol>
                 </nav>
             }
-
-            <div class="page-content">
-                @Body
-            </div>
+            <div class="page-content">@Body</div>
         </div>
     </main>
 
     <!-- Footer -->
     <footer class="site-footer">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <h5>FlickBinge</h5>
-                    <p class="text-muted">Your ultimate movie and TV show companion.</p>
-                    <div class="social-links">
-                        <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <h6>Discover</h6>
-                    <ul class="footer-links">
-                        <li><a href="/movies">Movies</a></li>
-                        <li><a href="/tv-shows">TV Shows</a></li>
-                        <li><a href="/trending">Trending</a></li>
-                        <li><a href="/coming-soon">Coming Soon</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <h6>Support</h6>
-                    <ul class="footer-links">
-                        <li><a href="/help">Help Center</a></li>
-                        <li><a href="/contact">Contact Us</a></li>
-                        <li><a href="/feedback">Feedback</a></li>
-                        <li><a href="/bug-report">Report Bug</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <h6>Legal</h6>
-                    <ul class="footer-links">
-                        <li><a href="/terms">Terms of Service</a></li>
-                        <li><a href="/privacy">Privacy Policy</a></li>
-                        <li><a href="/cookies">Cookie Policy</a></li>
-                        <li><a href="/dmca">DMCA</a></li>
-                    </ul>
-                </div>
+            <div class="row gy-4">
+                <div class="col-lg-3 col-md-6"><h5>FlickBinge</h5><p class="text-muted">Your ultimate movie and TV show companion.</p></div>
+                <div class="col-lg-3 col-md-6"><h6>Discover</h6><ul class="footer-links"><li><a href="/movies">Movies</a></li><li><a href="/tv-shows">TV Shows</a></li></ul></div>
+                <div class="col-lg-3 col-md-6"><h6>Support</h6><ul class="footer-links"><li><a href="/help">Help Center</a></li><li><a href="/contact">Contact Us</a></li></ul></div>
+                <div class="col-lg-3 col-md-6"><h6>Legal</h6><ul class="footer-links"><li><a href="/terms">Terms of Service</a></li><li><a href="/privacy">Privacy Policy</a></li></ul></div>
             </div>
-            <hr class="footer-divider">
-            <div class="footer-bottom">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <p class="mb-0">&copy; @DateTime.Now.Year FlickBinge. All rights reserved.</p>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <small class="text-muted">Made with ❤️ for movie lovers</small>
-                    </div>
-                </div>
+            <hr class="footer-divider" />
+            <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <p class="mb-0">&copy; @DateTime.Now.Year FlickBinge. All rights reserved.</p>
+                <small class="text-muted">Made with ❤️ for movie lovers</small>
             </div>
         </div>
     </footer>
 
-    <!-- Back to Top Button -->
-    <button class="back-to-top @(_showBackToTop ? "show" : "")" @onclick="ScrollToTop">
-        <i class="fas fa-chevron-up"></i>
-    </button>
+    <!-- Back to Top -->
+    <button class="back-to-top @(_showBackToTop ? "show" : "")" @onclick="ScrollToTop"><i class="fas fa-chevron-up"></i></button>
 </div>
 
+
 @code {
-    private bool _isLoggedIn = false;
+    private bool _isLoggedIn;
     private bool _isInitializing = true;
+
     private string _username = "User";
     private string _userEmail = "";
     private string? _userAvatar;
+
     private string _searchQuery = "";
-    private bool _showSearchDropdown = false;
-    private bool _showMobileSearch = false;
-    private bool _showBackToTop = false;
-    private int _notificationCount = 0;
+    private bool _showSearchDropdown;
+    private bool _showMobileSearch;
+    private bool _showBackToTop;
+
+    private int _notificationCount;
     private List<string> _notifications = new();
+
     private string _currentRoute = "";
     private List<string> _breadcrumbs = new();
+
     private ElementReference mobileSearchInput;
     private DotNetObjectReference<MainLayout>? _dotNetRef;
+
+    private string _toastMessage = "";
+    private System.Timers.Timer? _toastTimer;
+
+    private CancellationTokenSource? _logoutCts;
 
     protected override async Task OnInitializedAsync()
     {
         _dotNetRef = DotNetObjectReference.Create(this);
 
-        // Subscribe to navigation changes
         Nav.LocationChanged += OnLocationChanged;
         UpdateBreadcrumbs(Nav.Uri);
 
@@ -330,46 +245,114 @@
     {
         if (firstRender)
         {
-            // Initialize scroll listener for back-to-top button
-            await JSRuntime.InvokeVoidAsync("window.addEventListener", "scroll",
-                DotNetObjectReference.Create(this), "onScroll");
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("fbLayout_init", _dotNetRef);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Layout] JS init failed: {ex.Message}");
+            }
         }
     }
+
 
     private async Task CheckAuthenticationStatus()
     {
         try
         {
             var token = await Storage.GetItemAsync("accessToken");
-            if (!string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token))
             {
-                _isLoggedIn = true;
-                _username = await Storage.GetItemAsync("username") ?? "User";
-                _userEmail = await Storage.GetItemAsync("email") ?? "";
-                _userAvatar = await Storage.GetItemAsync("avatar");
+                await SetLoggedOutUiAsync();
+                return;
             }
+
+            var handler = new JwtSecurityTokenHandler();
+            JwtSecurityToken jwt;
+            try
+            {
+                jwt = handler.ReadJwtToken(token);
+            }
+            catch
+            {
+                // Corrupt token
+                await Logout();
+                return;
+            }
+
+            var utcNow = DateTime.UtcNow;
+            var validTo = jwt.ValidTo; // already UTC
+            var remaining = validTo - utcNow;
+
+            if (remaining <= TimeSpan.Zero)
+            {
+                await ShowToastAsync("Your session expired. Please sign in again.");
+                await Logout();
+                return;
+            }
+
+            // Valid session → set UI
+            _isLoggedIn = true;
+            _username = await Storage.GetItemAsync("username") ?? "User";
+            _userEmail = await Storage.GetItemAsync("email") ?? "";
+            _userAvatar = await Storage.GetItemAsync("avatar");
+
+            // Schedule auto logout when token expires (buffer 2s)
+            _logoutCts?.Cancel();
+            _logoutCts = new();
+            _ = ScheduleAutoLogout(remaining + TimeSpan.FromSeconds(2), _logoutCts.Token);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error checking authentication: {ex.Message}");
+            Console.WriteLine($"[Layout] CheckAuthenticationStatus error: {ex.Message}");
+            await SetLoggedOutUiAsync();
         }
+    }
+
+    private async Task ScheduleAutoLogout(TimeSpan delay, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(delay, token);
+            if (token.IsCancellationRequested) return;
+
+            await ShowToastAsync("Your session expired. Please sign in again.");
+            await Logout();
+        }
+        catch (TaskCanceledException) { /* ignore */ }
+    }
+
+    private async Task SetLoggedOutUiAsync()
+    {
+        _isLoggedIn = false;
+        _username = "User";
+        _userEmail = "";
+        _userAvatar = null;
+        _logoutCts?.Cancel();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadNotifications()
     {
-        // Simulate loading notifications
-        _notifications = new List<string>
+        // Simulated notifications
+        _notifications = new()
         {
             "New movie added to your watchlist",
             "Your friend rated a movie 5 stars",
             "Weekly recommendations are ready"
         };
         _notificationCount = _notifications.Count;
+        await Task.CompletedTask;
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         UpdateBreadcrumbs(e.Location);
+
+        // Re-check login state on every navigation (handles login page -> app)
+        _ = CheckAuthenticationStatus();
+
         InvokeAsync(StateHasChanged);
     }
 
@@ -391,25 +374,21 @@
             _showMobileSearch = false;
             _showSearchDropdown = false;
             Nav.NavigateTo($"/search?q={Uri.EscapeDataString(searchTerm)}");
+            await Task.CompletedTask;
         }
     }
 
     private async Task HandleSearchKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
-        {
             await PerformSearch();
-        }
     }
 
-    private void ShowSearchDropdown()
-    {
-        _showSearchDropdown = true;
-    }
+    private void ShowSearchDropdown() => _showSearchDropdown = true;
 
     private void HideSearchDropdown()
     {
-        Task.Delay(150).ContinueWith(_ =>
+        _ = Task.Delay(150).ContinueWith(_ =>
         {
             _showSearchDropdown = false;
             InvokeAsync(StateHasChanged);
@@ -437,34 +416,98 @@
             await Storage.RemoveItemAsync("avatar");
             await Storage.RemoveItemAsync("userId");
 
-            _isLoggedIn = false;
-            _username = "User";
-            _userEmail = "";
-            _userAvatar = null;
+            await SetLoggedOutUiAsync();
 
+            // Force reload to clear any auth-cached state in child components
             Nav.NavigateTo("/", forceLoad: true);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error during logout: {ex.Message}");
+            Console.WriteLine($"[Layout] Logout error: {ex.Message}");
         }
     }
 
-    private async Task ScrollToTop()
+    private async Task ScrollToTop() => await JSRuntime.InvokeVoidAsync("fbLayout_scrollToTop");
+
+    // JS -> .NET: update back-to-top visibility
+    [JSInvokable]
+    public Task OnScrollChanged(double scrollY)
     {
-        await JSRuntime.InvokeVoidAsync("window.scrollTo", 0, 0);
+        var show = scrollY > 200;
+        if (show != _showBackToTop)
+        {
+            _showBackToTop = show;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
     }
 
-    [JSInvokable]
-    public void OnScroll()
+    private static string GetInitials(string? name)
     {
-        // This would be called from JavaScript
-        // For now, we'll use a simple approach
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpperInvariant();
+        return (char.ToUpperInvariant(parts[0][0]) + "" + char.ToUpperInvariant(parts[^1][0]));
+    }
+
+    private async Task ShowToastAsync(string message, int ms = 3500)
+    {
+        _toastMessage = message;
+        _toastTimer?.Stop();
+        _toastTimer?.Dispose();
+
+        _toastTimer = new System.Timers.Timer(ms) { AutoReset = false, Enabled = true };
+        _toastTimer.Elapsed += (_, __) =>
+        {
+            _toastMessage = "";
+            InvokeAsync(StateHasChanged);
+        };
+        _toastTimer.Start();
+        await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
-        Nav.LocationChanged -= OnLocationChanged;
-        _dotNetRef?.Dispose();
+        try
+        {
+            Nav.LocationChanged -= OnLocationChanged;
+            _dotNetRef?.Dispose();
+            _logoutCts?.Cancel();
+            _logoutCts?.Dispose();
+            _toastTimer?.Stop();
+            _toastTimer?.Dispose();
+        }
+        catch { /* ignored */ }
     }
 }
+
+@* -------- Inline helpers (JS + CSS) -------- *@
+<script>
+    // Minimal, safe global helpers (no modules required)
+    window.fbLayout_init = function (dotNetRef) {
+        try {
+            // Scroll listener to toggle back-to-top visibility
+            window.addEventListener('scroll', () => {
+                dotNetRef.invokeMethodAsync('OnScrollChanged', window.scrollY);
+            }, { passive: true });
+
+            // Ctrl+K focuses desktop search
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    const input = document.getElementById('desktopSearch');
+                    if (input) input.focus();
+                }
+            }, { passive: false });
+        } catch (e) {
+            console.warn('[fbLayout] init error:', e);
+        }
+    };
+
+    window.fbLayout_scrollToTop = function () {
+        try {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch { window.scrollTo(0, 0); }
+    };
+</script>
+

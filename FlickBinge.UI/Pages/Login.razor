@@ -4,16 +4,15 @@
 @inject NavigationManager Nav
 @inject FlickBinge.UI.Services.LocalStorageService Storage
 
-<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-dark">
-    <div class="card shadow-lg border-0" style="max-width: 400px; width: 100%;">
-        <div class="card-header bg-danger text-white text-center py-4">
+<div class="auth-page">
+    <div class="auth-card card shadow-lg">
+        <div class="card-header text-center">
             <h3 class="mb-0">
-                <i class="fas fa-film me-2"></i>
-                FlickBinge Login
+                <i class="fas fa-film me-2"></i> FlickBinge Login
             </h3>
         </div>
         <div class="card-body p-4">
-            <EditForm Model="@_loginModel" OnValidSubmit="LoginAsync" FormName="LoginForm">
+            <EditForm Model="@_loginModel" OnValidSubmit="LoginAsync">
                 <DataAnnotationsValidator />
 
                 @if (!string.IsNullOrEmpty(_errorMessage))
@@ -28,8 +27,7 @@
 
                 <div class="mb-3">
                     <label for="emailOrUsername" class="form-label fw-semibold">
-                        <i class="fas fa-user me-1"></i>
-                        Email or Username
+                        <i class="fas fa-user me-1"></i> Email or Username
                     </label>
                     <InputText id="emailOrUsername"
                                class="form-control form-control-lg"
@@ -42,8 +40,7 @@
 
                 <div class="mb-4">
                     <label for="password" class="form-label fw-semibold">
-                        <i class="fas fa-lock me-1"></i>
-                        Password
+                        <i class="fas fa-lock me-1"></i> Password
                     </label>
                     <InputText id="password"
                                class="form-control form-control-lg"
@@ -60,21 +57,21 @@
                         disabled="@_isLoading">
                     @if (_isLoading)
                     {
-                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        <span>Signing In...</span>
-                    }
+                        <span class="spinner-border spinner-border-sm me-2">Signing In</span>
+                        
+                                        }
                     else
                     {
-                        <i class="fas fa-sign-in-alt me-2"></i>
-                        <span>Sign In</span>
-                    }
+                        <i class="fas fa-sign-in-alt me-2"> Sign In</i>
+                       
+                                        }
                 </button>
             </EditForm>
 
             <div class="text-center">
                 <small class="text-muted">
-                    Don't have an account?
-                    <a href="/register" class="text-danger text-decoration-none fw-semibold">Sign up here</a>
+                    Don’t have an account?
+                    <a href="/register" class="fw-semibold text-danger text-decoration-none">Sign up here</a>
                 </small>
             </div>
         </div>
@@ -87,11 +84,6 @@
 
     private string? _errorMessage;
     private bool _isLoading = false;
-
-    protected override void OnInitialized()
-    {
-        _loginModel ??= new LoginRequest();
-    }
 
     private async Task LoginAsync()
     {
@@ -109,14 +101,12 @@
 
                 if (authResponse != null)
                 {
-                    // Store authentication data
                     await Storage.SetItemAsync("accessToken", authResponse.AccessToken);
                     await Storage.SetItemAsync("refreshToken", authResponse.RefreshToken);
                     await Storage.SetItemAsync("username", authResponse.Username);
                     await Storage.SetItemAsync("userId", authResponse.UserId.ToString());
                     await Storage.SetItemAsync("email", authResponse.Email);
 
-                    // Navigate to home page
                     Nav.NavigateTo("/", forceLoad: true);
                 }
                 else
@@ -126,30 +116,18 @@
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-
                 _errorMessage = response.StatusCode switch
                 {
                     System.Net.HttpStatusCode.Unauthorized => "Invalid email/username or password.",
                     System.Net.HttpStatusCode.BadRequest => "Please check your input and try again.",
-                    System.Net.HttpStatusCode.TooManyRequests => "Too many login attempts. Please try again later.",
+                    System.Net.HttpStatusCode.TooManyRequests => "Too many login attempts. Try again later.",
                     _ => "Login failed. Please try again later."
                 };
             }
         }
-        catch (HttpRequestException)
+        catch
         {
-            _errorMessage = "Unable to connect to the server. Please check your internet connection.";
-        }
-        catch (TaskCanceledException)
-        {
-            _errorMessage = "The request timed out. Please try again.";
-        }
-        catch (Exception ex)
-        {
-            _errorMessage = "An unexpected error occurred. Please try again.";
-            // Log the exception in production
-            Console.WriteLine($"Login error: {ex.Message}");
+            _errorMessage = "Unable to connect. Please check your internet connection.";
         }
         finally
         {
@@ -158,33 +136,16 @@
         }
     }
 
-    private void ClearErrorMessage()
-    {
-        if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            _errorMessage = null;
-            StateHasChanged();
-        }
-    }
+    private void ClearErrorMessage() => _errorMessage = null;
 
-    // Data models
     public class LoginRequest
     {
-        [Required(ErrorMessage = "Email or Username is required")]
-        [StringLength(100, ErrorMessage = "Email or Username cannot exceed 100 characters")]
+        [Required, StringLength(100)]
         public string EmailOrUsername { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Password is required")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters")]
+        [Required, StringLength(100, MinimumLength = 6)]
         public string Password { get; set; } = string.Empty;
     }
 
-    public record AuthResponse(
-        string AccessToken,
-        string RefreshToken,
-        DateTime ExpiresAt,
-        Guid UserId,
-        string Username,
-        string Email
-    );
+    public record AuthResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt, Guid UserId, string Username, string Email);
 }
