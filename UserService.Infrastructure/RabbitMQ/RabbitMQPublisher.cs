@@ -54,7 +54,8 @@ namespace UserService.Infrastructure.RabbitMQ
             var body = Encoding.UTF8.GetBytes(message);
 
             // Publish directly to the queue using default exchange
-            await _channel.BasicPublishAsync(
+            var channel = _channel ?? throw new InvalidOperationException("RabbitMQ channel not initialized. Call InitializeAsync first.");
+            await channel.BasicPublishAsync(
                 exchange: "",            // default exchange
                 routingKey: _queueName,  // queue name
                 body: body
