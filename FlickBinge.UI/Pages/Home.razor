@@ -1,4 +1,24 @@
 ﻿@page "/"
+@inject HttpClient Http
+@inject FlickBinge.UI.Services.LocalStorageService Storage
+@inject Microsoft.Extensions.Logging.ILogger<Home> Logger
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">FlickBinge</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/movies">Movies</a></li>
+                <li class="nav-item"><a class="nav-link" href="/recommendations">Recommendations</a></li>
+                <li class="nav-item"><a class="nav-link" href="/watchlist">Watchlist</a></li>
+                <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
 
 <div class="home-page">
     <!-- Hero Section -->
@@ -14,43 +34,79 @@
         </div>
     </section>
 
-    <!-- Featured Categories -->
+    <!-- Latest Releases -->
     <section class="py-5">
         <div class="container">
-            <h2 class="mb-4 fw-semibold text-white">Explore FlickBinge</h2>
+            <h2 class="mb-4 fw-semibold text-white">Latest Releases</h2>
             <div class="row g-4">
-                <div class="col-md-4 col-sm-12">
-                    <div class="card gradient-card gradient-trending h-100">
-                        <div class="card-body text-white d-flex flex-column">
-                            <h5 class="card-title fw-bold">🔥 Trending Now</h5>
-                            <p class="card-text flex-grow-1">
-                                See what’s hot in movies and TV shows around the world.
-                            </p>
-                            <a href="/trending" class="btn btn-outline-light btn-sm align-self-start">View Trending</a>
+                @if (latest != null && latest.Any())
+                {
+                    foreach (var m in latest)
+                    {
+                        <div class="col-md-3 col-sm-6">
+                            <div class="card bg-dark text-light h-100">
+                                <img src="@m.Poster" class="card-img-top" alt="@m.Title" style="height:350px;object-fit:cover;" />
+                                <div class="card-body">
+                                    <h5 class="card-title">@m.Title</h5>
+                                    <p class="card-text text-secondary">@m.Year</p>
+                                    <a href="/movies" class="btn btn-outline-light btn-sm">View</a>
+                                    <button class="btn btn-outline-warning btn-sm ms-2" @onclick="() => AddToWatchlist(m)">Add to Watchlist</button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-12">
-                    <div class="card gradient-card gradient-recommended h-100">
-                        <div class="card-body text-white d-flex flex-column">
-                            <h5 class="card-title fw-bold">⭐ Recommended For You</h5>
-                            <p class="card-text flex-grow-1">
-                                Tailored picks based on your favorites and viewing habits.
-                            </p>
-                            <a href="/recommendations" class="btn btn-outline-light btn-sm align-self-start">See Recommendations</a>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center text-secondary">Loading...</div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Picks -->
+    <section class="py-5 bg-card">
+        <div class="container">
+            <h2 class="mb-4 text-white">Top Picks</h2>
+            <div class="row g-4">
+                @if (topPicks != null && topPicks.Any())
+                {
+                    foreach (var m in topPicks)
+                    {
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card h-100 gradient-card shadow-sm">
+                                <div class="card-body text-white">
+                                    <h5 class="card-title">@m.Title</h5>
+                                    <p class="card-text text-secondary">@m.Year</p>
+                                    <a href="/movies" class="btn btn-light btn-sm">Explore</a>
+                                </div>
+                            </div>
                         </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center text-secondary">Loading...</div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter / CTA -->
+    <section class="py-5 text-center">
+        <div class="container">
+            <h3 class="text-white mb-3">Get weekly picks in your inbox</h3>
+            <p class="text-secondary mb-4">Subscribe to our newsletter for hand-picked movies, new releases and exclusive content.</p>
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input @bind="newsletterEmail" class="form-control" placeholder="Enter your email" aria-label="Email" />
+                        <button class="btn btn-danger" @onclick="Subscribe">Subscribe</button>
                     </div>
-                </div>
-                <div class="col-md-4 col-sm-12">
-                    <div class="card gradient-card gradient-watchlist h-100">
-                        <div class="card-body text-white d-flex flex-column">
-                            <h5 class="card-title fw-bold">📌 My Watchlist</h5>
-                            <p class="card-text flex-grow-1">
-                                Keep track of all the movies and shows you want to watch later.
-                            </p>
-                            <a href="/watchlist" class="btn btn-outline-light btn-sm align-self-start">View My List</a>
-                        </div>
-                    </div>
+                    @if (!string.IsNullOrEmpty(newsletterMessage))
+                    {
+                        <div class="mt-2 text-secondary">@newsletterMessage</div>
+                    }
                 </div>
             </div>
         </div>
@@ -67,36 +123,111 @@
             </p>
         </div>
     </section>
+
+    <!-- Footer -->
+    <footer class="py-4 bg-dark text-secondary">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div>© FlickBinge 2025</div>
+            <div>
+                <a class="text-secondary me-3" href="/about">About</a>
+                <a class="text-secondary me-3" href="/privacy">Privacy</a>
+                <a class="text-secondary" href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
 </div>
 
-<style>
-    .hero-section {
-        min-height: 70vh;
-        background: linear-gradient(135deg, #141414 0%, #0f0f0f 100%);
+@code {
+    private List<Movie>? latest;
+    private List<Movie>? topPicks;
+    private string newsletterEmail = string.Empty;
+    private string newsletterMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMoviesAsync();
     }
 
-    /* Gradient Cards */
-    .gradient-card {
-        border: none;
-        border-radius: 1rem;
-        box-shadow: var(--shadow-lg);
-        transition: var(--transition);
+    private async Task LoadMoviesAsync()
+    {
+        try
+        {
+            // Fetch popular movies from MovieService (via API gateway)
+            var movies = await Http.GetFromJsonAsync<List<Movie>>("/movies");
+            latest = movies?.Take(8).ToList() ?? new List<Movie>();
+            topPicks = movies?.Take(3).ToList() ?? new List<Movie>();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load movies");
+            latest = new List<Movie>();
+            topPicks = new List<Movie>();
+        }
     }
 
-        .gradient-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    private async Task AddToWatchlist(Movie m)
+    {
+        try
+        {
+            var userId = await Storage.GetItemAsync("userId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                newsletterMessage = "Please log in to add items to your watchlist.";
+                return;
+            }
+
+            // POST to watchlist service via API gateway
+            var resp = await Http.PostAsJsonAsync($"/watchlist/{userId}/movies", m.Title);
+            if (resp.IsSuccessStatusCode)
+            {
+                newsletterMessage = "Added to your watchlist!";
+            }
+            else
+            {
+                newsletterMessage = "Could not add to watchlist.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to add to watchlist");
+            newsletterMessage = "An error occurred.";
+        }
+    }
+
+    private async Task Subscribe()
+    {
+        if (string.IsNullOrEmpty(newsletterEmail))
+        {
+            newsletterMessage = "Please enter a valid email.";
+            return;
         }
 
-    .gradient-trending {
-        background: linear-gradient(135deg, #e50914, #b20710);
+        try
+        {
+            var payload = new { Email = newsletterEmail };
+            var resp = await Http.PostAsJsonAsync("/newsletter", payload);
+            if (resp.IsSuccessStatusCode)
+            {
+                newsletterMessage = "Thanks! Check your email for the weekly picks.";
+                newsletterEmail = string.Empty;
+            }
+            else
+            {
+                newsletterMessage = "Subscription failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Newsletter subscribe failed");
+            newsletterMessage = "An error occurred.";
+        }
     }
 
-    .gradient-recommended {
-        background: linear-gradient(135deg, #1f4037, #99f2c8);
+    public class Movie
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Year { get; set; } = string.Empty;
+        public string Poster { get; set; } = string.Empty;
+        public string imdbID { get; set; } = string.Empty;
     }
-
-    .gradient-watchlist {
-        background: linear-gradient(135deg, #141e30, #243b55);
-    }
-</style>
+}
