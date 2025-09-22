@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  movie-service:
+    build:
+      context: .
+      dockerfile: MovieService.Api/Dockerfile
+    environment:
+      - OMDb__ApiKey=${OMDB_API_KEY}
+    ports:
+      - "5001:5000"
+    depends_on:
+      - rabbitmq
+
+  recommendation-service:
+    build:
+      context: .
+      dockerfile: RecommendationService.Api/Dockerfile
+    environment:
+      - OpenAI__ApiKey=${OPENAI_API_KEY}
+    ports:
+      - "5002:5000"
+    depends_on:
+      - rabbitmq
+
+  user-service:
+    build:
+      context: .
+      dockerfile: UserService.Api/Dockerfile
+    environment:
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+      # Connection string left to appsettings (point to your existing SQL Server)
+    ports:
+      - "5003:5000"
+    depends_on:
+      - rabbitmq
+
+  watchlist-service:
+    build:
+      context: .
+      dockerfile: WatchlistService.Api/Dockerfile
+    ports:
+      - "5004:5000"
+    depends_on:
+      - rabbitmq
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - movie-service
+      - recommendation-service
+      - user-service
+      - watchlist-service
+
+  flickbinge-ui:
+    build:
+      context: .
+      dockerfile: FlickBinge.UI/Dockerfile
+    ports:
+      - "5022:5000"
+    depends_on:
+      - api-gateway
+
+# Note: SQL Server is provided externally (not by docker-compose) per your request
