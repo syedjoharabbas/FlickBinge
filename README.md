@@ -110,3 +110,35 @@ The Watchlist consumer expects this contract and creates an empty watchlist for 
 
 ## License
 MIT
+
+---
+
+## Docker (local development)
+
+A docker-compose setup is provided to run the platform locally. By default the compose file brings up RabbitMQ and builds the service containers. SQL Server is expected to be provided externally (the compose file no longer starts MSSQL — update connection strings to point at your host DB).
+
+Files added:
+- `docker-compose.yml` — composes RabbitMQ and all services (builds service images from the repository)
+- `Dockerfile` in each Api/UI project
+- `.env` — environment variable placeholders (OMDb, OpenAI, JWT)
+
+Quick start (example):
+1. Edit `.env` and set your keys and values (OMDB_API_KEY, OPENAI_API_KEY, JWT_KEY, JWT_ISSUER, JWT_AUDIENCE).
+2. Ensure your SQL Server is accessible from containers (use `host.docker.internal` on Windows) and appsettings for `UserService.Api` and `WatchlistService.Api` point to that DB.
+3. Build and run the stack:
+   ```powershell
+   docker-compose up -d --build
+   ```
+4. Monitor logs:
+   ```powershell
+   docker-compose logs -f movie-service
+   docker-compose logs -f user-service
+   ```
+5. Tear down:
+   ```powershell
+   docker-compose down
+   ```
+
+Notes:
+- If you prefer the compose file to provide SQL Server too, I can re-enable it and add healthchecks and data volumes.
+- For production use, create proper Docker images, add secrets management, and ensure hardened database credentials.
