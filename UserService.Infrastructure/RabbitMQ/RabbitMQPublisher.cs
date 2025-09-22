@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace UserService.Infrastructure.RabbitMQ
 {
@@ -13,6 +14,12 @@ namespace UserService.Infrastructure.RabbitMQ
         private IConnection? _connection;
         private IChannel? _channel;
         private bool _initialized = false;
+        private readonly ILogger<RabbitMQPublisher> _logger;
+
+        public RabbitMQPublisher(ILogger<RabbitMQPublisher> logger)
+        {
+            _logger = logger;
+        }
 
         public async Task InitializeAsync()
         {
@@ -53,7 +60,7 @@ namespace UserService.Infrastructure.RabbitMQ
                 body: body
             );
 
-            Console.WriteLine($"[UserService] Sent UserCreated for {userId}");
+            _logger.LogInformation("[UserService] Sent UserCreated for {UserId}", userId);
         }
 
         public async ValueTask DisposeAsync()

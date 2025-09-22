@@ -28,6 +28,11 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
+if (string.IsNullOrEmpty(jwtSettings["Key"]))
+{
+    throw new InvalidOperationException("Jwt:Key configuration is required.");
+}
+var jwtKeyValue = jwtSettings["Key"]!;
 builder.Services.Configure<JwtSettings>(jwtSettings);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -40,7 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKeyValue))
         };
     });
 

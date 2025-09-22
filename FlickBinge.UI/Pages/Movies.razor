@@ -1,6 +1,7 @@
 ﻿@page "/movies"
 @inject HttpClient Http
 @inject FlickBinge.UI.Services.LocalStorageService Storage
+@inject ILogger<Movies> Logger
 
 <h2 class="mb-4 text-light">Movies</h2>
 
@@ -34,7 +35,6 @@ else
     private List<Movie>? movies;
 
     protected override async Task OnInitializedAsync()
-    
     {
         try
         {
@@ -42,46 +42,45 @@ else
             if (!string.IsNullOrEmpty(token))
             {
                 // Simple token debugging - just show first/last parts
-                Console.WriteLine($"Token length: {token.Length}");
-                Console.WriteLine($"Token starts with: {token.Substring(0, Math.Min(20, token.Length))}...");
-                Console.WriteLine($"Token ends with: ...{token.Substring(Math.Max(0, token.Length - 20))}");
+                Logger.LogDebug("Token length: {Len}", token.Length);
+                Logger.LogDebug("Token starts with: {Start}...", token.Substring(0, Math.Min(20, token.Length)));
+                Logger.LogDebug("Token ends with: ...{End}", token.Substring(Math.Max(0, token.Length - 20)));
 
                 Http.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
                 // Make the request and handle response properly
                 var response = await Http.GetAsync("http://localhost:5000/movies");
-                Console.WriteLine($"Response status: {response.StatusCode}");
-                Console.WriteLine($"Response headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"))}");
+                Logger.LogDebug("Response status: {Status}", response.StatusCode);
+                Logger.LogDebug("Response headers: {Headers}", string.Join(", ", response.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}")));
 
                 if (response.IsSuccessStatusCode)
                 {
                     movies = await response.Content.ReadFromJsonAsync<List<Movie>>();
-                    Console.WriteLine($"Loaded {movies?.Count ?? 0} movies");
+                    Logger.LogInformation("Loaded {Count} movies", movies?.Count ?? 0);
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error response: {errorContent}");
+                    Logger.LogWarning("Error response: {Error}", errorContent);
                 }
             }
             else
             {
-                Console.WriteLine("No token found in storage");
+                Logger.LogWarning("No token found in storage");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            Logger.LogError(ex, "Error loading movies");
         }
     }
 
     public class Movie
     {
-        public string title { get; set; }
-        public string year { get; set; }
-        public string poster { get; set; }
-        public string imdbID { get; set; }
+        public string title { get; set; } = string.Empty;
+        public string year { get; set; } = string.Empty;
+        public string poster { get; set; } = string.Empty;
+        public string imdbID { get; set; } = string.Empty;
     }
 }
