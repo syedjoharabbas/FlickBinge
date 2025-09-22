@@ -4,12 +4,12 @@ using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using WatchlistService.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace WatchlistService.Infrastructure.RabbitMQ;
 
 public class RabbitMQConsumer : IAsyncDisposable
 {
-    private readonly IWatchlistService _watchlistService;
     private readonly string _hostname = "localhost";
     private readonly int _port = 5672;
     private readonly string _queueName = "WatchlistQueue";
@@ -17,15 +17,17 @@ public class RabbitMQConsumer : IAsyncDisposable
     private IChannel? _channel;
     private bool _disposed = false;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<RabbitMQConsumer> _logger;
 
-    public RabbitMQConsumer(IServiceScopeFactory scopeFactory)
+    public RabbitMQConsumer(IServiceScopeFactory scopeFactory, ILogger<RabbitMQConsumer> logger)
     {
         _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task StartListeningAsync()
     {
-        var factory = new ConnectionFactory { HostName = _hostname,Port=_port };
+        var factory = new ConnectionFactory { HostName = _hostname, Port = _port };
         _connection = await factory.CreateConnectionAsync();
         _channel = await _connection.CreateChannelAsync();
 
@@ -52,14 +54,18 @@ public class RabbitMQConsumer : IAsyncDisposable
                     var watchlistService = scope.ServiceProvider.GetRequiredService<IWatchlistService>();
 
                     await watchlistService.CreateWatchlistAsync(eventObj.UserId);
+                    _logger.LogInformation("[Watchlist] Created watchlist for user {UserId}", eventObj.UserId);
                 }
 
                 await _channel.BasicAckAsync(ea.DeliveryTag, false);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing message: {ex.Message}");
-                await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                _logger.LogError(ex, "Error processing RabbitMQ message");
+                if (_channel != null)
+                {
+                    await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                }
             }
         };
 

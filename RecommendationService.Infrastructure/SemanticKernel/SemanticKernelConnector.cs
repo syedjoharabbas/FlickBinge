@@ -2,6 +2,7 @@
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace RecommendationService.Infrastructure.SemanticKernel
 {
@@ -28,7 +29,10 @@ namespace RecommendationService.Infrastructure.SemanticKernel
             chatHistory.AddUserMessage(prompt);
 
             var result = await _chatCompletionService.GetChatMessageContentsAsync(chatHistory);
-            return result[0].Content;
+
+            // Return first content or empty string to avoid nulls
+            var content = result?.FirstOrDefault()?.Content;
+            return content ?? string.Empty;
         }
     }
 }

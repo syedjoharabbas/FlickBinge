@@ -23,6 +23,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 
 app.MapPost("/{userId:guid}", async (Guid userId, IWatchlistService watchlistService) =>
 {
@@ -47,11 +49,5 @@ app.MapGet("/{userId:guid}", async (Guid userId, IWatchlistService watchlistServ
     var movies = await watchlistService.GetWatchlistAsync(userId);
     return Results.Ok(movies);
 });
-
-app.Run();
-
-app.UseAuthorization();
-
-app.MapControllers();
 
 app.Run();

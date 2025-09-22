@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Yarp.ReverseProxy;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,10 +15,9 @@ var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
-// Debug: Log the configuration values
-Console.WriteLine($"🔧 JWT Key: {jwtKey}");
-Console.WriteLine($"🔧 JWT Issuer: {jwtIssuer}");
-Console.WriteLine($"🔧 JWT Audience: {jwtAudience}");
+// Fail fast if JWT key missing
+if (string.IsNullOrEmpty(jwtKey))
+    throw new InvalidOperationException("Jwt:Key configuration is required.");
 
 // JWT Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -41,24 +41,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnMessageReceived = context =>
             {
                 var token = context.Request.Headers.Authorization.FirstOrDefault()?.Split(" ").Last();
-                Console.WriteLine($"🔑 Token received: {token?.Substring(0, Math.Min(50, token?.Length ?? 0))}...");
+                var reqLogger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                reqLogger.LogDebug("🔑 Token received (truncated): {TokenPreview}", token?.Substring(0, Math.Min(50, token?.Length ?? 0)));
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
-                Console.WriteLine("✅ Token validated successfully");
+                var reqLogger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                reqLogger.LogInformation("✅ Token validated successfully");
                 var claims = context.Principal?.Claims?.Select(c => $"{c.Type}: {c.Value}");
-                Console.WriteLine($"✅ Claims: {string.Join(", ", claims ?? new string[0])}");
+                reqLogger.LogDebug("✅ Claims: {Claims}", string.Join(", ", claims ?? new string[0]));
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
             {
-                Console.WriteLine($"❌ Authentication failed: {context.Exception.Message}");
-                Console.WriteLine($"❌ Exception type: {context.Exception.GetType().Name}");
+                var reqLogger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                reqLogger.LogError(context.Exception, "❌ Authentication failed");
 
                 if (context.Exception.InnerException != null)
                 {
-                    Console.WriteLine($"❌ Inner exception: {context.Exception.InnerException.Message}");
+                    reqLogger.LogError(context.Exception.InnerException, "❌ Inner exception");
                 }
                 return Task.CompletedTask;
             }
@@ -89,6 +91,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ApiGatewayStartup");
+logger.LogInformation("🔧 JWT Key set={HasKey}", !string.IsNullOrEmpty(jwtKey));
+logger.LogInformation("🔧 JWT Issuer set={HasIssuer}", !string.IsNullOrEmpty(jwtIssuer));
+logger.LogInformation("🔧 JWT Audience set={HasAudience}", !string.IsNullOrEmpty(jwtAudience));
+
 app.UseHttpsRedirection();
 app.UseCors();
 
@@ -109,16 +116,16 @@ app.Use(async (context, next) =>
 // Debug middleware
 app.Use(async (context, next) =>
 {
-    Console.WriteLine($"📥 {context.Request.Method} {context.Request.Path}");
+    logger.LogInformation("📥 {Method} {Path}", context.Request.Method, context.Request.Path);
     var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
     if (!string.IsNullOrEmpty(authHeader))
     {
-        Console.WriteLine($"📥 Auth header: {authHeader.Substring(0, Math.Min(30, authHeader.Length))}...");
+        logger.LogDebug("📥 Auth header: {AuthPreview}", authHeader.Substring(0, Math.Min(30, authHeader.Length)));
     }
 
     await next();
 
-    Console.WriteLine($"📤 Response: {context.Response.StatusCode}");
+    logger.LogInformation("📤 Response: {StatusCode}", context.Response.StatusCode);
 });
 
 app.UseAuthentication();
