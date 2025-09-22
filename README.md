@@ -1,132 +1,112 @@
-🎬 FlickBinge
+# FlickBinge
 
-FlickBinge is a microservices-based movie discovery platform built with .NET 9.
-It integrates with external APIs (currently OMDb API) to provide movie data and is designed to grow into a distributed system with multiple independent services.
+FlickBinge is a microservices-based movie discovery platform implemented with .NET 9. It demonstrates a small distributed-system architecture with separable APIs, infrastructure layers, a Blazor UI, an API gateway (YARP), inter-service messaging (RabbitMQ), resilience (Polly), and external integrations (OMDb, OpenAI via Semantic Kernel).
 
-🏗️ Architecture
+---
 
-FlickBinge follows a microservices architecture where each domain feature runs as an independent service.
+## Projects (high-level)
+- `ApiGateway` — YARP reverse-proxy, central JWT authentication/authorization and routing to backend services.
+- `FlickBinge.UI` — Blazor WebAssembly front-end that talks to the gateway/backends.
+- `MovieService.Api` (+ Core + Infrastructure) — fetches movie data from OMDb and exposes movie endpoints.
+- `RecommendationService.Api` (+ Core + Infrastructure) — builds recommendations using Microsoft Semantic Kernel (OpenAI) and is protected by resilience policies.
+- `UserService.Api` (+ Core + Infrastructure) — user registration, auth (JWT), refresh tokens, and publishes `UserCreated` events to RabbitMQ.
+- `WatchlistService.Api` (+ Core + Infrastructure) — per-user watchlists; subscribes to `UserCreated` events via RabbitMQ consumer and maintains watchlists in a database.
 
-Current Services
+Each service follows the Core/Api/Infrastructure pattern: domain interfaces & models in Core, concrete implementations (EF, RabbitMQ, connectors) in Infrastructure, and minimal API in Api projects.
 
-🎥 MovieService.Api
+---
 
-Fetches movie details from OMDb API
+## Key features implemented
+- JWT-based authentication and authorization with validation at startup (fail-fast when config missing).
+- API Gateway (YARP) that routes requests to backend services and enforces authentication.
+- RabbitMQ pub/sub:
+  - `UserService` publishes `UserCreated` events (JSON) to `WatchlistQueue`.
+  - `WatchlistService` runs a background consumer that creates a watchlist for new users.
+- Resilience via Polly:
+  - Retry + circuit-breaker policies applied to outbound HTTP (OMDb) and to Semantic Kernel calls.
+  - Policies are centralized in a PolicyRegistry and applied via `AddPolicyHandlerFromRegistry` or executed from the registry.
+- Structured logging via `ILogger<T>` across gateway, services, and RabbitMQ handlers.
+- Blazor WebAssembly UI that calls the backend APIs (through the gateway in typical setups).
+- Semantic Kernel connector for OpenAI-based recommendations (requires OpenAI API key).
 
-Exposes REST endpoints for client apps
+---
 
-Planned Services
+## Prerequisites (local)
+- .NET 9 SDK (preview may be used in this workspace)
+- RabbitMQ running locally (default at `localhost:5672`) or a reachable RabbitMQ instance
+- OMDb API key (for movie data)
+- OpenAI API key (for recommendations)
 
-👤 AuthService – User authentication & JWT-based security
+Environment variables or configuration keys used by the services:
+- `OMDb__ApiKey` or `OMDb:ApiKey` — OMDb API key (MovieService)
+- `OpenAI__ApiKey` or `OpenAI:ApiKey` — OpenAI key (RecommendationService)
+- `Jwt:Key`, `Jwt:Issuer`, `Jwt:Audience` — JWT settings (UserService, ApiGateway expects them)
+- Connection strings: `DefaultConnection` (UserService), `WatchlistConnection` (WatchlistService)
 
-⭐ FavoritesService – Save & manage favorite movies
+---
 
-🧠 RecommendationService – Suggests movies based on user history
+## Quick local run (development)
+1. Start RabbitMQ locally (Docker example):
+   - docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+2. Set secrets / environment variables (example PowerShell):
+   - $env:OMDb__ApiKey = "your-omdb-key"
+   - $env:OpenAI__ApiKey = "your-openai-key"
+   - $env:Jwt__Key = "a-very-secret-key"
+   - Set connection strings for the SQL Server instances used by services (or update appsettings).
+3. From repo root — restore & build:
+   - dotnet restore FlickBinge.sln
+   - dotnet build FlickBinge.sln
+4. Start services (in separate terminals or use an IDE launch profile):
+   - ApiGateway
+   - UserService.Api
+   - MovieService.Api
+   - RecommendationService.Api
+   - WatchlistService.Api
+   - FlickBinge.UI (Blazor WASM)
 
-📊 AnalyticsService – Collects and reports usage data
+Ports (local dev launch settings):
+- MovieService.Api: http://localhost:5001
+- RecommendationService.Api: http://localhost:5002
+- UserService.Api: http://localhost:5003
+- WatchlistService.Api: http://localhost:5004
+- ApiGateway: configured via `ReverseProxy` section in `appsettings.json` (routes to above)
+- FlickBinge.UI: http://localhost:5022 (CORS configured in gateway)
 
-📂 Repository Structure
-FlickBinge/
-│── MovieService.Api/        # Current microservice (movies)
-│   ├── Controllers/         
-│   ├── Models/              
-│   ├── Services/            
-│   ├── Program.cs           
-│   └── appsettings.json     
-│
-└── README.md
+---
 
+## Resilience & Observability
+- Retry + circuit-breaker policies protect outbound HTTP and AI calls. Policy parameters can be tuned in code or moved to configuration.
+- Policy events (retry, break, reset, half-open) are logged with `ILogger` for visibility.
+- Consider adding metrics (Prometheus) and a health endpoint to surface circuit state in production.
 
-Each service will live in its own project folder and can be deployed independently.
+---
 
-⚙️ Setup & Run
-1️⃣ Clone the repo
-git clone https://github.com/your-username/FlickBinge.git
-cd FlickBinge/MovieService.Api
-
-2️⃣ Get an OMDb API Key
-
-Register for a free API key 👉 OMDb API
-
-3️⃣ Configure API Key
-Option A: appsettings.json
-{
-  "OMDb": {
-    "ApiKey": "YOUR_OMDB_API_KEY"
+## Message contract (current)
+- `UserCreated` event JSON shape published by `UserService`:
+  {
+    "EventType": "UserCreated",
+    "UserId": "<GUID>"
   }
-}
 
-Option B: User Secrets (safe for local dev)
-dotnet user-secrets init
-dotnet user-secrets set "OMDb:ApiKey" "YOUR_OMDB_API_KEY"
+The Watchlist consumer expects this contract and creates an empty watchlist for the new user.
 
-Option C: Environment Variable
-setx OMDb__ApiKey "YOUR_OMDB_API_KEY"
+---
 
-4️⃣ Run
-dotnet run --project MovieService.Api
+## Notes & next steps
+- Move policy parameters into `appsettings.json` and bind them at startup for easier tuning.
+- Add persistent fallback/caching strategies for degraded modes.
+- Add Dockerfiles and docker-compose to bring up the full stack (RabbitMQ, SQL, and services).
+- Add unit and integration tests around policy behavior and message flows.
 
+---
 
-API available at:
-👉 https://localhost:5001/api/movies/{title}
+## Contributing
+1. Fork the repo
+2. Create a feature branch
+3. Make your changes and run tests
+4. Open a PR describing the change
 
-📡 Example
+---
 
-Request
-
-GET /api/movies/Guardians%20of%20the%20Galaxy%20Vol.%202
-
-
-Response
-
-{
-  "id": "tt3896198",
-  "title": "Guardians of the Galaxy Vol. 2",
-  "year": "2017",
-  "plot": "The Guardians struggle to keep together as a team...",
-  "poster": "https://m.media-amazon.com/images/M/...jpg"
-}
-
-🛠️ Tech Stack
-
-.NET 9
-
-ASP.NET Core Web API
-
-Microservices architecture
-
-OMDb API integration
-
-Dependency Injection & configuration binding
-
-Secure secrets management
-
-🗺️ Roadmap
-
- Add AuthService for secure login
-
- Add FavoritesService with database support
-
- Add RecommendationService (ML-based or rules)
-
- Add API Gateway for unified access
-
- Add Swagger/OpenAPI docs per service
-
- Add Docker support for deployment
-
-🤝 Contributing
-
-Fork the repo
-
-Create a feature branch
-
-Commit changes
-
-Push to your fork
-
-Open a PR
-
-📄 License
-
-This project is licensed under the MIT License.
+## License
+MIT
